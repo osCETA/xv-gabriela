@@ -269,7 +269,7 @@ details.grp[open] summary::after{content:"－"}
 .toast.show{opacity:1;transform:translateX(-50%)}
 </style>
 </head>
-<body class="locked">
+<body class="locked guest">
 
 <!-- ============ SVG reutilizables ============ -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -703,6 +703,9 @@ details.grp[open] summary::after{content:"－"}
 (function(){
 'use strict';
 const KEY='xv_romantico_v8';
+// Modo edición: solo al abrir la página con #editar al final de la dirección.
+// Los invitados ven siempre los datos fijados en la página, sin botón de edición.
+const EDIT=location.hash==='#editar';
 function clone(o){return JSON.parse(JSON.stringify(o))}
 const ICONS={recepcion:'Recepción',misa:'Misa / Ceremonia',entrada:'Entrada',vals:'Vals',brindis:'Brindis',cena:'Cena',torta:'Torta',baile:'Baile',sorpresa:'Sorpresa'};
 const EMPTY={
@@ -725,6 +728,7 @@ let D=load();
 let playlist=[],track=0,wantPlay=false;
 
 function load(){
+  if(!EDIT)return clone(DEF);
   try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)return Object.assign(clone(DEF),s);}catch(e){}
   return clone(DEF);
 }
@@ -883,7 +887,7 @@ $('#gate').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.pre
 /* ---------- música ---------- */
 const audio=$('#audio');
 function loadTrack(i){track=(i+playlist.length)%playlist.length;audio.src=playlist[track].url;$('#songName').textContent='♪ '+playlist[track].name}
-function play(){if(!playlist.length){if(document.getElementById('songData')){wantPlay=true;toast('Cargando la canción…')}else toast('Canción pendiente: súbela desde “Editar datos”.');return}
+function play(){if(!playlist.length){if(document.getElementById('songData')){wantPlay=true;toast('Cargando la canción…')}else toast('Canción pendiente.');return}
   if(!audio.src)loadTrack(0);
   audio.play().then(syncMusic).catch(()=>toast('Toca el corazón para iniciar la música.'))}
 function syncMusic(){const on=!audio.paused;$('#btnHeart').classList.toggle('playing',on);$('#fab-music').classList.toggle('show',playlist.length>0);$('#fab-music').style.opacity=on?1:.6}
@@ -1088,9 +1092,9 @@ $('#modalOk').onclick=()=>{
   try{const o=JSON.parse($('#modalText').value);D=Object.assign(clone(DEF),o);save();location.reload()}catch(e){toast('El texto no es un JSON válido.')}
 };
 
-/* vista de invitado: #invitado oculta el botón de edición */
-function applyHash(){document.body.classList.toggle('guest',location.hash==='#invitado')}
-window.addEventListener('hashchange',applyHash);applyHash();
+/* el botón de edición solo aparece con #editar */
+document.body.classList.toggle('guest',!EDIT);
+window.addEventListener('hashchange',()=>{if((location.hash==='#editar')!==EDIT)location.reload()});
 
 buildEditor();render();renderSongName();
 /* La canción va en un bloque de datos al final del HTML: no frena la primera pintura
